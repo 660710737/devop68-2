@@ -115,24 +115,69 @@ spec:
         type: logical
         database: bookstore
         plugin: pgoutput
+    
+    # Bootstrap configuration for pg_hba.conf
+    bootstrap:
+      dcs:
+        ttl: 30
+        loop_wait: 10
+        retry_timeout: 10
+        maximum_lag_on_failover: 33554432
+        postgresql:
+          parameters:
+            autovacuum: "on"
+            autovacuum_max_workers: "3"
+            checkpoint_completion_target: "0.9"
+            effective_cache_size: "768MB"
+            effective_io_concurrency: "200"
+            log_destination: "stderr"
+            log_line_prefix: "%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h "
+            log_min_duration_statement: "1000"
+            logging_collector: "on"
+            maintenance_work_mem: "64MB"
+            max_connections: "200"
+            max_replication_slots: "10"
+            max_wal_senders: "10"
+            random_page_cost: "1.1"
+            shared_buffers: "256MB"
+            superuser_reserved_connections: "5"
+            wal_keep_size: "1GB"
+            wal_level: "replica"
+            work_mem: "4MB"
+      initdb:
+        - encoding: UTF8
+        - locale: C
+        - data-checksums
+        - auth-local: trust
+        - auth-host: md5
+        - pg_hba:
+          - "local   all             all                                     trust"
+          - "host    all             all             127.0.0.1/32            md5"
+          - "host    all             all             ::1/128                 md5"
+          - "local   replication     standby                                 trust"
+          - "host    replication     standby         127.0.0.1/32            md5"
+          - "host    replication     standby         ::1/128                 md5"
+          - "host    replication     standby         0.0.0.0/0               md5"
+          - "hostssl all             +zalandos       0.0.0.0/0               pam"
+          - "hostssl all             all             0.0.0.0/0               md5"
 
   # Init containers สำหรับ setup
-  initContainers:
-    - name: init-script
-      image: postgres:17-alpine
-      command:
-        - sh
-        - -c
-        - |
-          echo "Initialization script placeholder"
-          # Script จะรันผ่าน preparedDatabases แทน
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits:
-          cpu: 200m
-          memory: 256Mi
+  #initContainers:
+  #  - name: init-script
+  #    image: postgres:17-alpine
+  #    command:
+  #      - sh
+  #      - -c
+  #      - |
+  #        echo "Initialization script placeholder"
+  #        # Script จะรันผ่าน preparedDatabases แทน
+  #    resources:
+  #      requests:
+  #        cpu: 100m
+  #        memory: 128Mi
+  #      limits:
+  #       cpu: 200m
+  #        memory: 256Mi
 
   # Prepared databases with init scripts
   preparedDatabases:
